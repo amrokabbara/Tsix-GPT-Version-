@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light">
   <title>T‑Six Ventures — Matchmaking Engine Overview</title>
   <meta name="description" content="A scrollytelling one‑pager presenting T‑Six’s Startup↔Investor Matchmaking Engine: goals, architecture, features, roadmap, and MVP demo." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -77,12 +78,7 @@
     }
 
     /* Dark theme support (optional; auto if user's OS prefers dark) */
-    @media (prefers-color-scheme: dark){
-      :root{
-        --bg:#0b0d10; --card:#11141a; --text:#e7eaee; --muted:#aeb5bf;
-        --accent:#ff6a00; --line:#1d2330; --ring:#2a3242;
-      }
-    }
+  
     }
 
     /* Horizontal gallery */
@@ -337,7 +333,7 @@ if score &gt;= threshold:
 
     // Parallax layers (gentle)
     const layers = [...document.querySelectorAll('.parallax')];
-    const base = 3; // stronger parallax overall strength
+    const base = 6 // stronger parallax overall strength
     let ticking = false;
     const onScroll = () => {
       const y = container.scrollTop;
