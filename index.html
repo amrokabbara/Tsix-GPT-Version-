@@ -3,23 +3,38 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <title>T‑Six Ventures — Matchmaking Engine Overview</title>
   <meta name="description" content="A scrollytelling one‑pager presenting T‑Six’s Startup↔Investor Matchmaking Engine: goals, architecture, features, roadmap, and MVP demo." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
+    /* Theme variables */
     :root{
-      /* Light theme (default) */
-      --bg:#f7f8fb;         /* paper */
+      /* Light (default) */
+      --bg:#f7f8fb;         /* page */
       --card:#ffffff;       /* panel */
       --text:#11131a;       /* primary text */
       --muted:#5a6472;      /* secondary text */
-      --accent:#ff6a00;     /* brand orange */
-      --line:#e7eaf0;       /* dividers */
-      --ring:#cfd6e0;       /* focus ring */
+      --accent:#ff6a00;     /* brand */
+      --line:#e7eaf0;       /* borders */
+      --ring:#cfd6e0;       /* focus */
+      --navbg:rgba(255,255,255,.75);
     }
+    /* Auto dark, only when NO explicit theme is set */
+    @media (prefers-color-scheme: dark){
+      :root:not([data-theme]){
+        --bg:#0b0d10; --card:#11141a; --text:#e7eaee; --muted:#aeb5bf;
+        --accent:#ff6a00; --line:#1d2330; --ring:#2a3242; --navbg:rgba(12,14,18,.6);
+      }
+    }
+    /* Force dark when data-theme="dark" */
+    :root[data-theme="dark"]{
+      --bg:#0b0d10; --card:#11141a; --text:#e7eaee; --muted:#aeb5bf;
+      --accent:#ff6a00; --line:#1d2330; --ring:#2a3242; --navbg:rgba(12,14,18,.6);
+    }
+
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;scroll-behavior:smooth}
     body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
@@ -30,7 +45,7 @@
 
     /* Layout helpers */
     .wrap{width:min(1100px,92vw);margin:0 auto}
-    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.6),rgba(255,255,255,0.4));
           border:1px solid var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
           border-radius:18px;padding:28px}
     h1,h2{margin:.2em 0}
@@ -39,23 +54,23 @@
     p{color:var(--muted);line-height:1.7}
     .muted{color:var(--muted)}
     .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px}
-    .kpi .item{border:1px solid var(--line);border-radius:14px;padding:18px;background:rgba(255,255,255,.02)}
+    .kpi .item{border:1px solid var(--line);border-radius:14px;padding:18px;background:rgba(255,255,255,.6)}
     .item b{font-size:1.6rem}
 
     /* Header */
     header{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;z-index:10}
-    .nav{display:flex;gap:16px;align-items:center;background:rgba(12,14,18,.6);backdrop-filter:blur(10px);border:1px solid var(--line);padding:10px 14px;border-radius:999px;margin-top:12px}
-    .nav a{color:var(--muted);text-decoration:none;font-weight:600;padding:8px 12px;border-radius:999px}
-    .nav a:hover,.nav a.active{color:var(--text);background:rgba(255,255,255,.05)}
+    .nav{display:flex;gap:12px;align-items:center;background:var(--navbg);backdrop-filter:blur(10px);border:1px solid var(--line);padding:8px 10px;border-radius:999px;margin-top:12px}
+    .nav a{color:var(--muted);text-decoration:none;font-weight:600;padding:8px 10px;border-radius:999px}
+    .nav a:hover,.nav a.active{color:var(--text);background:rgba(0,0,0,.05)}
+    .theme-switch{display:flex;align-items:center;gap:6px;margin-left:6px}
+    .btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#101010;border:none;border-radius:12px;padding:12px 16px;font-weight:700;text-decoration:none}
+    .btn.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}
+    .btn.small{padding:6px 10px;font-size:.85rem}
 
     /* Dot nav */
     .dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:9}
-    .dot{width:10px;height:10px;border-radius:50%;background:#3a4150;border:1px solid #596177;opacity:.8}
+    .dot{width:10px;height:10px;border-radius:50%;background:#b8bec8;border:1px solid #c7cdd7;opacity:.9}
     .dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(255,106,0,.15)}
-
-    /* Buttons */
-    .btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#101010;border:none;border-radius:12px;padding:12px 16px;font-weight:700;text-decoration:none}
-    .btn.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}
 
     /* Grids */
     .grid{display:grid;gap:18px}
@@ -77,15 +92,16 @@
       html,body{scroll-behavior:auto}
     }
 
-    /* Dark theme support (optional; auto if user's OS prefers dark) */
-  
-    }
-
     /* Horizontal gallery */
     .h-scroll{display:grid;gap:16px}
     .h-track{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:8px}
-    .h-card{flex:0 0 clamp(260px,40vw,520px);scroll-snap-align:center;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.03);padding:14px}
+    .h-card{flex:0 0 clamp(260px,40vw,520px);scroll-snap-align:center;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.6);padding:14px}
     .h-card img, .h-card video{width:100%;height:auto;border-radius:12px;display:block}
+
+    /* Parallax + reveal effects */
+    .fx{position:absolute;inset:-10vh 0 0 0;pointer-events:none;z-index:0;opacity:.8;filter:blur(.6px);will-change:transform}
+    .reveal{position:relative;z-index:1;opacity:0;transform:translateY(24px);transition:opacity .6s ease, transform .6s ease}
+    .reveal.in{opacity:1;transform:none}
   </style>
 </head>
 <body>
@@ -99,6 +115,9 @@
       <a href="#roadmap">Roadmap</a>
       <a href="#mvp">MVP</a>
       <a href="#contact">Contact</a>
+      <span class="theme-switch">
+        <button id="themeBtn" class="btn secondary small" type="button">Theme: Auto</button>
+      </span>
     </nav>
   </header>
 
@@ -117,7 +136,8 @@
   <main id="container">
     <!-- INTRO -->
     <section id="intro">
-      <div class="wrap">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap reveal">
         <div class="card">
           <h1>T‑Six Matchmaking Engine</h1>
           <p class="muted">A focused system that pairs <b>right‑fit startups</b> with <b>right‑fit investors</b> using structured data, scoring, and warm‑path intelligence. This page is a quick, scroll‑by‑section demo of the product vision.</p>
@@ -133,7 +153,8 @@
 
     <!-- GOALS -->
     <section id="goals">
-      <div class="wrap grid cols-2">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap grid cols-2 reveal">
         <div class="card">
           <h2>Goals & Objectives</h2>
           <ul class="muted">
@@ -157,7 +178,8 @@
 
     <!-- REQUIREMENTS / BRIEF ACK -->
     <section id="requirements">
-      <div class="wrap grid cols-2">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap grid cols-2 reveal">
         <div class="card">
           <h2>Understanding the Brief</h2>
           <p class="muted">You asked for a practical system (not a shiny demo) that respects your current dealflow and adds a dependable layer of data discipline and outreach. This design focuses on <b>fit scoring</b>, <b>warm‑path discovery</b>, and <b>explainable insights</b>.</p>
@@ -176,7 +198,8 @@
 
     <!-- ARCHITECTURE OVERVIEW -->
     <section id="architecture">
-      <div class="wrap">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap reveal">
         <div class="card">
           <h2>Architecture Overview</h2>
           <div class="grid cols-2">
@@ -203,11 +226,13 @@ if score &gt;= threshold:
             </div>
           </div>
         </div>
-      </div>    </section>
+      </div>
+    </section>
 
     <!-- GALLERY / VISUALS -->
     <section id="gallery">
-      <div class="wrap">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap reveal">
         <div class="card">
           <h2>Visual Highlights</h2>
           <p class="muted">Drop in screenshots, short clips, or UI mockups. Scroll horizontally.</p>
@@ -225,7 +250,8 @@ if score &gt;= threshold:
 
     <!-- FEATURES -->
     <section id="features">
-      <div class="wrap grid cols-2">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap grid cols-2 reveal">
         <div class="card">
           <h2>Core Features</h2>
           <ul class="muted">
@@ -248,7 +274,8 @@ if score &gt;= threshold:
 
     <!-- ROADMAP -->
     <section id="roadmap">
-      <div class="wrap">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap reveal">
         <div class="card">
           <h2>Roadmap</h2>
           <ol class="muted">
@@ -263,7 +290,8 @@ if score &gt;= threshold:
 
     <!-- MVP / DEMO CTA -->
     <section id="mvp">
-      <div class="wrap grid cols-2">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap grid cols-2 reveal">
         <div class="card">
           <h2>MVP Demo</h2>
           <p class="muted">This opens a live preview (or video) of the MVP. Replace the link below with your actual demo when ready.</p>
@@ -282,7 +310,8 @@ if score &gt;= threshold:
 
     <!-- CONTACT / NEXT STEPS -->
     <section id="contact">
-      <div class="wrap">
+      <div class="fx parallax" data-speed="0.45"></div>
+      <div class="wrap reveal">
         <div class="card">
           <h2>Next Steps</h2>
           <p class="muted">If aligned, we’ll lock the MVP scope, connect data sources, and confirm a conservative delivery timeline. Once approved, this page becomes the public landing for the project.</p>
@@ -331,14 +360,14 @@ if score &gt;= threshold:
     }, { threshold: [0.2, 0.6, 0.8] });
     sections.forEach(s => io.observe(s));
 
-    // Parallax layers (gentle)
+    // Parallax layers (strong)
     const layers = [...document.querySelectorAll('.parallax')];
-    const base = 6 // stronger parallax overall strength
+    const base = 6; // much stronger parallax overall strength
     let ticking = false;
     const onScroll = () => {
       const y = container.scrollTop;
       layers.forEach(el => {
-        const speed = parseFloat(el.dataset.speed || '0.1');
+        const speed = parseFloat(el.dataset.speed || '0.45');
         el.style.transform = `translate3d(0, ${Math.round(-y*speed*base)}px, 0)`;
       });
       ticking = false;
@@ -357,6 +386,26 @@ if score &gt;= threshold:
     window.addEventListener('keydown', (e) => {
       if (['ArrowDown','PageDown','Space'].includes(e.key)) { e.preventDefault(); go(1); }
       if (['ArrowUp','PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+    });
+
+    // Theme toggle (Light / Dark / Auto)
+    const THEME_KEY = 'tsix_theme';
+    const btn = document.getElementById('themeBtn');
+    const modes = ['auto','light','dark'];
+    function label(mode){ return 'Theme: ' + mode[0].toUpperCase() + mode.slice(1); }
+    function applyTheme(mode){
+      document.documentElement.removeAttribute('data-theme');
+      if(mode === 'light') document.documentElement.setAttribute('data-theme','light');
+      if(mode === 'dark') document.documentElement.setAttribute('data-theme','dark');
+      localStorage.setItem(THEME_KEY, mode);
+      btn.textContent = label(mode);
+    }
+    const saved = localStorage.getItem(THEME_KEY) || 'auto';
+    applyTheme(saved);
+    btn.addEventListener('click', ()=>{
+      const current = localStorage.getItem(THEME_KEY) || 'auto';
+      const next = modes[(modes.indexOf(current)+1)%modes.length];
+      applyTheme(next);
     });
 
     // --- Self-tests ---
