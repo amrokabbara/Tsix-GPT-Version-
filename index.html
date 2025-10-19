@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>T‑Six Ventures — Matchmaking Engine Overview</title>
+  <meta name="description" content="A scrollytelling one‑pager presenting T‑Six’s Startup↔Investor Matchmaking Engine: goals, architecture, features, roadmap, and MVP demo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* Light theme (default) */
+      --bg:#f7f8fb;         /* paper */
+      --card:#ffffff;       /* panel */
+      --text:#11131a;       /* primary text */
+      --muted:#5a6472;      /* secondary text */
+      --accent:#ff6a00;     /* brand orange */
+      --line:#e7eaf0;       /* dividers */
+      --ring:#cfd6e0;       /* focus ring */
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;scroll-behavior:smooth}
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
+
+    /* Scroll‑snap container */
+    main{height:100vh;overflow-y:scroll;scroll-snap-type:y proximity;scroll-padding-top:8vh;scroll-padding-bottom:8vh}
+    section{position:relative;min-height:100vh;display:grid;place-items:center;padding:6rem 2rem;scroll-snap-align:start}
+
+    /* Layout helpers */
+    .wrap{width:min(1100px,92vw);margin:0 auto}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));
+          border:1px solid var(--line);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+          border-radius:18px;padding:28px}
+    h1,h2{margin:.2em 0}
+    h1{font-size:clamp(2rem,4vw,3rem);letter-spacing:.3px}
+    h2{font-size:clamp(1.4rem,3vw,2rem)}
+    p{color:var(--muted);line-height:1.7}
+    .muted{color:var(--muted)}
+    .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:16px}
+    .kpi .item{border:1px solid var(--line);border-radius:14px;padding:18px;background:rgba(255,255,255,.02)}
+    .item b{font-size:1.6rem}
+
+    /* Header */
+    header{position:fixed;top:0;left:0;right:0;display:flex;justify-content:center;z-index:10}
+    .nav{display:flex;gap:16px;align-items:center;background:rgba(12,14,18,.6);backdrop-filter:blur(10px);border:1px solid var(--line);padding:10px 14px;border-radius:999px;margin-top:12px}
+    .nav a{color:var(--muted);text-decoration:none;font-weight:600;padding:8px 12px;border-radius:999px}
+    .nav a:hover,.nav a.active{color:var(--text);background:rgba(255,255,255,.05)}
+
+    /* Dot nav */
+    .dots{position:fixed;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:9}
+    .dot{width:10px;height:10px;border-radius:50%;background:#3a4150;border:1px solid #596177;opacity:.8}
+    .dot.active{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px rgba(255,106,0,.15)}
+
+    /* Buttons */
+    .btn{display:inline-flex;align-items:center;gap:10px;background:var(--accent);color:#101010;border:none;border-radius:12px;padding:12px 16px;font-weight:700;text-decoration:none}
+    .btn.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}
+
+    /* Grids */
+    .grid{display:grid;gap:18px}
+    .grid.cols-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+
+    /* Code-ish block */
+    pre{margin:0;padding:16px;border-radius:12px;background:#0e131a;border:1px solid var(--line);color:#d0d7e2;overflow:auto}
+
+    /* Footer */
+    footer{color:var(--muted);text-align:center;padding:20px}
+
+    /* Small screens */
+    @media (max-width:640px){
+      .nav{gap:6px}
+      .nav a{padding:6px 10px;font-size:.9rem}
+      .dots{right:10px}
+    }
+    @media (prefers-reduced-motion: reduce){
+      html,body{scroll-behavior:auto}
+    }
+
+    /* Dark theme support (optional; auto if user's OS prefers dark) */
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0b0d10; --card:#11141a; --text:#e7eaee; --muted:#aeb5bf;
+        --accent:#ff6a00; --line:#1d2330; --ring:#2a3242;
+      }
+    }
+    }
+
+    /* Horizontal gallery */
+    .h-scroll{display:grid;gap:16px}
+    .h-track{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:8px}
+    .h-card{flex:0 0 clamp(260px,40vw,520px);scroll-snap-align:center;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.03);padding:14px}
+    .h-card img, .h-card video{width:100%;height:auto;border-radius:12px;display:block}
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="nav" aria-label="Primary">
+      <a href="#intro" class="active">Intro</a>
+      <a href="#goals">Goals</a>
+      <a href="#requirements">Brief</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#features">Features</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#mvp">MVP</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Dot navigation -->
+  <div class="dots" aria-hidden="true">
+    <a class="dot" href="#intro" title="Intro"></a>
+    <a class="dot" href="#goals" title="Goals"></a>
+    <a class="dot" href="#requirements" title="Brief"></a>
+    <a class="dot" href="#architecture" title="Architecture"></a>
+    <a class="dot" href="#features" title="Features"></a>
+    <a class="dot" href="#roadmap" title="Roadmap"></a>
+    <a class="dot" href="#mvp" title="MVP"></a>
+    <a class="dot" href="#contact" title="Contact"></a>
+  </div>
+
+  <main id="container">
+    <!-- INTRO -->
+    <section id="intro">
+      <div class="wrap">
+        <div class="card">
+          <h1>T‑Six Matchmaking Engine</h1>
+          <p class="muted">A focused system that pairs <b>right‑fit startups</b> with <b>right‑fit investors</b> using structured data, scoring, and warm‑path intelligence. This page is a quick, scroll‑by‑section demo of the product vision.</p>
+          <div class="kpi">
+            <div class="item"><b>Problem → Fit</b><br><span class="muted">Noise, wrong timing, and poor mapping of thesis ✕ stage ✕ ticket.</span></div>
+            <div class="item"><b>Solution → Engine</b><br><span class="muted">A clean pipeline: ingest → tag → score → match → outreach → learn.</span></div>
+            <div class="item"><b>Outcome → Focus</b><br><span class="muted">Fewer meetings, higher hit‑rate, measurable ROI.</span></div>
+          </div>
+          <p style="margin-top:18px"><a class="btn" href="#mvp">Jump to MVP Demo →</a> <a class="btn secondary" href="#goals">Or scroll through</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- GOALS -->
+    <section id="goals">
+      <div class="wrap grid cols-2">
+        <div class="card">
+          <h2>Goals & Objectives</h2>
+          <ul class="muted">
+            <li>Clarity: a single source of truth for startups, investors, and matches.</li>
+            <li>Speed: reduce screening overhead with automated tagging + scoring.</li>
+            <li>Relevance: drive meetings that fit thesis, stage, ticket, and geo.</li>
+            <li>Learning loop: every outcome improves the model and heuristics.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Success Metrics</h2>
+          <ul class="muted">
+            <li>Meeting hit‑rate ↑ and time‑to‑decision ↓</li>
+            <li>Quality of matches (precision/recall) ↑</li>
+            <li>Onboarding time per entity ↓</li>
+            <li>Operational transparency & reporting ↑</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- REQUIREMENTS / BRIEF ACK -->
+    <section id="requirements">
+      <div class="wrap grid cols-2">
+        <div class="card">
+          <h2>Understanding the Brief</h2>
+          <p class="muted">You asked for a practical system (not a shiny demo) that respects your current dealflow and adds a dependable layer of data discipline and outreach. This design focuses on <b>fit scoring</b>, <b>warm‑path discovery</b>, and <b>explainable insights</b>.</p>
+        </div>
+        <div class="card">
+          <h2>Scope (Initial)</h2>
+          <ul class="muted">
+            <li>Entity models for Startups/Investors (stage, geo, ticket bands, sectors).</li>
+            <li>Ingestion pipeline + bulk tagging + manual overrides.</li>
+            <li>Matchmaker with adjustable weights and reasons‑why.</li>
+            <li>Outreach emails drafted → approve → send.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ARCHITECTURE OVERVIEW -->
+    <section id="architecture">
+      <div class="wrap">
+        <div class="card">
+          <h2>Architecture Overview</h2>
+          <div class="grid cols-2">
+            <div>
+              <p class="muted">A lean, composable stack designed for clarity and speed.</p>
+              <ul class="muted">
+                <li><b>Data</b>: Postgres (Supabase) — entities, matches, activity.</li>
+                <li><b>Pipelines</b>: n8n — ingest, enrich, tag, sync.</li>
+                <li><b>App</b>: Next.js (or WeWeb) — dashboards, CRUD, insights.</li>
+                <li><b>AI</b>: LLM for drafting outreach, insights, clustering.</li>
+                <li><b>Auth</b>: Email/SSO; RLS policies for secure access.</li>
+              </ul>
+            </div>
+            <div>
+              <pre><code>// Pseudocode: match scoring
+score = w.sector*sector_fit + w.stage*stage_fit +
+        w.ticket*ticket_fit + w.geo*geo_fit +
+        w.net*warm_path_strength
+
+if score &gt;= threshold:
+  create_match(startup, investor, reasons)
+  draft_outreach(match)
+</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>    </section>
+
+    <!-- GALLERY / VISUALS -->
+    <section id="gallery">
+      <div class="wrap">
+        <div class="card">
+          <h2>Visual Highlights</h2>
+          <p class="muted">Drop in screenshots, short clips, or UI mockups. Scroll horizontally.</p>
+          <div class="h-scroll">
+            <div class="h-track">
+              <div class="h-card"><img src="assets/screen-1.jpg" alt="Dashboard mockup 1" loading="lazy"></div>
+              <div class="h-card"><img src="assets/screen-2.jpg" alt="Dashboard mockup 2" loading="lazy"></div>
+              <div class="h-card"><video src="assets/flow.mp4" controls muted playsinline></video></div>
+              <div class="h-card"><img src="assets/screen-3.jpg" alt="Matching flow" loading="lazy"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <div class="wrap grid cols-2">
+        <div class="card">
+          <h2>Core Features</h2>
+          <ul class="muted">
+            <li>Scorecard with adjustable weights and transparent reasons.</li>
+            <li>Knowledge‑graph view: clusters, paths, and central players.</li>
+            <li>Outreach flow: draft → edit → approve → send.</li>
+            <li>Analytics: funnels, hit‑rates, activity heatmaps.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h2>Admin & Ops</h2>
+          <ul class="muted">
+            <li>Bulk import & cleansing; status workflows.</li>
+            <li>Role‑based access; audit trail and exports.</li>
+            <li>API hooks to Vercel/Netlify for deploy previews.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROADMAP -->
+    <section id="roadmap">
+      <div class="wrap">
+        <div class="card">
+          <h2>Roadmap</h2>
+          <ol class="muted">
+            <li><b>MVP</b>: Ingest, Tag, Score, Match, Outreach draft.</li>
+            <li><b>v1.1</b>: Warm‑path graph + insights panel.</li>
+            <li><b>v1.2</b>: Feedback loop (model learns from outcomes).</li>
+            <li><b>v1.3</b>: Investor preferences & auto‑cadence outreach.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- MVP / DEMO CTA -->
+    <section id="mvp">
+      <div class="wrap grid cols-2">
+        <div class="card">
+          <h2>MVP Demo</h2>
+          <p class="muted">This opens a live preview (or video) of the MVP. Replace the link below with your actual demo when ready.</p>
+          <p><a class="btn" href="#" target="_blank" rel="noopener">Open Demo</a></p>
+        </div>
+        <div class="card">
+          <h2>What to Look For</h2>
+          <ul class="muted">
+            <li>Entity cleanliness and tagging discipline.</li>
+            <li>Transparent match reasons you can trust.</li>
+            <li>Fast outreach drafting with minimal editing needed.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT / NEXT STEPS -->
+    <section id="contact">
+      <div class="wrap">
+        <div class="card">
+          <h2>Next Steps</h2>
+          <p class="muted">If aligned, we’ll lock the MVP scope, connect data sources, and confirm a conservative delivery timeline. Once approved, this page becomes the public landing for the project.</p>
+          <p><a class="btn" href="mailto:hello@example.com">Contact</a> <a class="btn secondary" href="#intro">Back to Top</a></p>
+        </div>
+        <footer>© <span id="year"></span> T‑Six Ventures • Draft presentation</footer>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Elements
+    const container = document.getElementById('container');
+    const sections = [...document.querySelectorAll('main section')];
+    const navLinks = [...document.querySelectorAll('header .nav a')];
+    const dots = [...document.querySelectorAll('.dots .dot')];
+
+    const byId = id => sections.findIndex(s => s.id === id);
+    const activate = (idx) => {
+      navLinks.forEach(a => a.classList.remove('active'));
+      dots.forEach(d => d.classList.remove('active'));
+      if (idx >= 0) {
+        navLinks[idx]?.classList.add('active');
+        dots[idx]?.classList.add('active');
+      }
+    };
+
+    // Reveal-on-enter
+    const revealIO = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); }});
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.reveal').forEach(el => revealIO.observe(el));
+
+    // Active section tracking (smoother thresholds)
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        if (e.isIntersecting && e.intersectionRatio > 0.6) {
+          const idx = sections.indexOf(e.target);
+          activate(idx);
+          history.replaceState(null, '', `#${e.target.id}`);
+        }
+      });
+    }, { threshold: [0.2, 0.6, 0.8] });
+    sections.forEach(s => io.observe(s));
+
+    // Parallax layers (gentle)
+    const layers = [...document.querySelectorAll('.parallax')];
+    const base = 3; // stronger parallax overall strength
+    let ticking = false;
+    const onScroll = () => {
+      const y = container.scrollTop;
+      layers.forEach(el => {
+        const speed = parseFloat(el.dataset.speed || '0.1');
+        el.style.transform = `translate3d(0, ${Math.round(-y*speed*base)}px, 0)`;
+      });
+      ticking = false;
+    };
+    container.addEventListener('scroll', ()=>{
+      if(!ticking){ requestAnimationFrame(onScroll); ticking = true; }
+    });
+    onScroll();
+
+    // Keyboard navigation (PageUp/Down, ArrowUp/Down)
+    const go = step => {
+      const current = location.hash ? byId(location.hash.substring(1)) : 0;
+      const next = Math.min(Math.max(current + step, 0), sections.length - 1);
+      sections[next].scrollIntoView({ behavior: 'smooth' });
+    };
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowDown','PageDown','Space'].includes(e.key)) { e.preventDefault(); go(1); }
+      if (['ArrowUp','PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+    });
+
+    // --- Self-tests ---
+    document.addEventListener('DOMContentLoaded', () => {
+      console.assert(sections.length === navLinks.length && sections.length === dots.length, 'Nav/Dot count should match sections');
+      console.assert('IntersectionObserver' in window, 'IntersectionObserver must be supported');
+      console.assert(document.querySelector('main') === container, 'Parallax container bound');
+    });
+  </script>
+</body>
+</html>
